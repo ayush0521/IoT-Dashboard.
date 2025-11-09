@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IoT Weather + AQI Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>🌦️ Hyperlocal Weather & AQI Dashboard</h1>
+
+  <div id="latest">
+    <h2>Latest Readings</h2>
+    <p><b>Temperature:</b> <span id="temp">--</span> °C</p>
+    <p><b>Humidity:</b> <span id="hum">--</span> %</p>
+    <p><b>Air Quality (MQ135):</b> <span id="aqi">--</span></p>
+    <p><b>Last Updated:</b> <span id="time">--</span></p>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="weatherChart"></canvas>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
