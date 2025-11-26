@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>IoT Weather & AQI — Dashboard</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet for map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>🌦️ Hyperlocal Weather & AQI</h1>
+    <div id="status" class="badge">Loading…</div>
+  </header>
+
+  <main class="layout">
+    <!-- Left column: Latest + Map -->
+    <section class="col-left">
+      <div id="latest" class="card">
+        <h2>Latest Readings</h2>
+        <div class="latest-grid">
+          <div>
+            <div class="label">Temperature</div>
+            <div id="temp" class="big-value">-- °C</div>
+          </div>
+          <div>
+            <div class="label">Humidity</div>
+            <div id="hum" class="big-value">-- %</div>
+          </div>
+          <div>
+            <div class="label">AQI (MQ135)</div>
+            <div id="aqi" class="big-value">--</div>
+          </div>
+          <div>
+            <div class="label">Last Updated</div>
+            <div id="time" class="muted">--</div>
+          </div>
+        </div>
+        <div id="calib" class="muted small">Calibration: unknown</div>
+      </div>
+
+      <div id="mapCard" class="card">
+        <h3>Location</h3>
+        <div id="map" class="map"></div>
+        <div class="coords">
+          <div><strong>Latitude:</strong> <span id="lat">--</span></div>
+          <div><strong>Longitude:</strong> <span id="lon">--</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right column: Short graphs + Predictions -->
+    <section class="col-right">
+      <div class="card small-charts">
+        <h3>Recent</h3>
+        <div class="sparks">
+          <div class="spark-card">
+            <div class="spark-label">Temperature (°C)</div>
+            <canvas id="sparkTemp" class="spark-canvas"></canvas>
+          </div>
+          <div class="spark-card">
+            <div class="spark-label">Humidity (%)</div>
+            <canvas id="sparkHum" class="spark-canvas"></canvas>
+          </div>
+          <div class="spark-card">
+            <div class="spark-label">AQI (MQ135)</div>
+            <canvas id="sparkAqi" class="spark-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div id="predictCard" class="card">
+        <h3>Predictions (next 6 steps)</h3>
+        <div class="predict-grid">
+          <div class="predict-block">
+            <div class="predict-title">Temperature</div>
+            <div class="predict-value" id="predTempNext">—</div>
+            <canvas id="predTemp" class="mini-canvas"></canvas>
+          </div>
+          <div class="predict-block">
+            <div class="predict-title">Humidity</div>
+            <div class="predict-value" id="predHumNext">—</div>
+            <canvas id="predHum" class="mini-canvas"></canvas>
+          </div>
+          <div class="predict-block">
+            <div class="predict-title">AQI</div>
+            <div class="predict-value" id="predAqiNext">—</div>
+            <canvas id="predAqi" class="mini-canvas"></canvas>
+          </div>
+        </div>
+        <div class="muted small">Prediction method: Simple linear extrapolation (last 4 points). Use for quick prototype — replace with trained ML model later.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Dashboard — client-side predictions. Deployed: <span id="deployed">—</span></small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

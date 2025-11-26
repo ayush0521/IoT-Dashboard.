@@ -1,0 +1,207 @@
+/* ---------------------------------------------
+   GLOBAL VARIABLES & RESET
+----------------------------------------------*/
+:root {
+  --bg:#f5f7fa;
+  --card:#fff;
+  --muted:#6b7280;
+  --accent:#2c7be5;
+  --radius:12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  background: var(--bg);
+  color: #111;
+  margin: 0;
+  padding: 20px;
+}
+
+/* ---------------------------------------------
+   HEADER
+----------------------------------------------*/
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1 {
+  margin: 6px 0;
+  color: #1f2937;
+}
+
+.badge {
+  background: #fff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  font-size: 14px;
+}
+
+/* ---------------------------------------------
+   LAYOUT
+----------------------------------------------*/
+.layout {
+  max-width: 1100px;
+  margin: 18px auto;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 18px;
+}
+
+/* ---------------------------------------------
+   CARDS
+----------------------------------------------*/
+.card {
+  background: var(--card);
+  padding: 16px;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(16,24,40,0.06);
+}
+
+.small {
+  padding: 12px;
+}
+
+.label,
+.muted,
+.predict-title {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.big-value {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+/* ---------------------------------------------
+   LATEST READING GRID
+----------------------------------------------*/
+.latest-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* ---------------------------------------------
+   MAP BLOCK
+----------------------------------------------*/
+.map {
+  width: 100%;
+  height: 220px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.coords {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* ---------------------------------------------
+   SMALL CHARTS (SPARKLINES)
+----------------------------------------------*/
+.sparks {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spark-card {
+  flex: 1;
+  background: #fafbfd;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: left;
+  height: 110px;
+  overflow: hidden;
+}
+
+.spark-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.spark-canvas {
+  width: 100% !important;
+  height: 70px !important;
+}
+
+/* ---------------------------------------------
+   PREDICTION BLOCK
+----------------------------------------------*/
+.predict-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.predict-block {
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  height: 160px;
+  overflow: hidden;
+}
+
+.predict-value {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 6px 0;
+}
+
+.mini-canvas {
+  width: 100% !important;
+  height: 80px !important;
+}
+
+/* ---------------------------------------------
+   MAIN GRAPH FRAME (FIXED SIZE)
+----------------------------------------------*/
+.chart-card {
+  height: 360px;
+  max-height: 360px;
+  overflow: hidden;
+}
+
+#weatherChart {
+  width: 100% !important;
+  height: 320px !important;
+}
+
+/* ---------------------------------------------
+   RESPONSIVE
+----------------------------------------------*/
+@media (max-width: 920px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding-bottom: 40px;
+  }
+  
+  .map {
+    height: 200px;
+  }
+
+  .sparks {
+    flex-direction: column;
+  }
+
+  .predict-grid {
+    grid-template-columns: 1fr;
+  }
+}
