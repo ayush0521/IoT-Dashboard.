@@ -8,8 +8,8 @@ Focused on <b>usability</b>, <b>scalability</b>, and <b>clean system design</b>
 
 <p align="center">
 🔗 <b>Live Dashboard:</b>
-<a href="https://ayush0521.github.io/IoT-Dashboard/" target="_blank">
-ayush0521.github.io/IoT-Dashboard
+<a href="https://ayush0521.github.io/iot-hyperlocal-weather-aqi-dashboard/" target="_blank">
+  ayush0521.github.io/iot-hyperlocal-weather-aqi-dashboard
 </a>
 </p>
 
