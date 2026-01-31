@@ -1,0 +1,164 @@
+/* ================= DESIGN TOKENS ================= */
+:root {
+  --bg-main: radial-gradient(circle at top, #0f1c3f, #060b23);
+  --card-bg: linear-gradient(180deg, #0c1b3a, #08122c);
+  --border-soft: rgba(255,255,255,0.06);
+
+  --text-main: #ffffff;
+  --text-muted: #9aa4bf;
+
+  --accent-green: #4caf50;
+  --accent-yellow: #ffc107;
+  --accent-red: #f44336;
+
+  --radius: 18px;
+  --shadow: 0 14px 40px rgba(0,0,0,0.45);
+}
+
+/* ================= RESET ================= */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: "Inter", Arial, sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+/* ================= HEADER ================= */
+.page-header {
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.page-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.page-header p {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ================= LAYOUT ================= */
+.dashboard {
+  display: grid;
+  grid-template-columns: 34% 66%;
+  gap: 26px;
+  max-width: 1400px;
+  margin: auto;
+}
+
+.sidebar,
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= CARD ================= */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-soft);
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+}
+
+.card h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+}
+
+/* ================= HERO CARD ================= */
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* AQI BADGE */
+#aqiBadge {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ================= LOCATION ================= */
+#map {
+  height: 220px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-soft);
+}
+
+.coords {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ================= CHARTS ================= */
+.charts-row {
+  display: flex;
+  gap: 14px;
+}
+
+.chart-box {
+  width: 33%;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.chart-box span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.chart-box canvas {
+  height: 140px !important;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1100px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-row {
+    flex-direction: column;
+  }
+
+  .chart-box {
+    width: 100%;
+  }
+}
