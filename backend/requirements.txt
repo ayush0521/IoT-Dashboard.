@@ -2,5 +2,6 @@ fastapi
 uvicorn
 numpy
 joblib
-tensorflow
+scikit-learn
+tensorflow-cpu
 keras
