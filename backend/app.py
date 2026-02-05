@@ -4,17 +4,16 @@ from pydantic import BaseModel
 import numpy as np
 import joblib
 import os
-from keras.models import load_model
+import tensorflow as tf
 
 # -----------------------------
 # App initialization
 # -----------------------------
 app = FastAPI(title="AQI Prediction API")
 
-# Allow frontend (GitHub Pages / local / Render)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten later if needed
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,38 +23,37 @@ app.add_middleware(
 # Paths
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "lstm_aqi_model.keras")
+MODEL_PATH = os.path.join(BASE_DIR, "model", "lstm_aqi_model_clean.keras")
 SCALER_PATH = os.path.join(BASE_DIR, "model", "aqi_scaler.pkl")
 
 # -----------------------------
-# Globals (loaded once)
+# Globals
 # -----------------------------
 model = None
 scaler = None
 
 # -----------------------------
-# Load ML artifacts safely
+# Load ML artifacts
 # -----------------------------
 def load_artifacts():
     global model, scaler
     try:
         print("🔄 Loading ML model...")
-        model = load_model(MODEL_PATH)
+        model = tf.keras.models.load_model(MODEL_PATH, compile=False)
         scaler = joblib.load(SCALER_PATH)
         print("✅ Model & scaler loaded successfully")
     except Exception as e:
-        print("❌ ERROR loading model or scaler:", e)
+        print("❌ ERROR loading artifacts:", e)
         model = None
         scaler = None
 
-# Load at startup (safe point)
 load_artifacts()
 
 # -----------------------------
 # Request schema
 # -----------------------------
 class AQIInput(BaseModel):
-    values: list[list[float]]  # expected shape: (5, 3)
+    values: list[list[float]]  # shape: (5, 3)
 
 # -----------------------------
 # Health check
@@ -74,20 +72,25 @@ def health():
 @app.post("/predict")
 def predict_aqi(data: AQIInput):
     if model is None or scaler is None:
-        return {
-            "error": "Model or scaler not loaded",
-            "predicted_aqi": None
-        }
+        return {"error": "Model or scaler not loaded"}
 
     try:
-        arr = np.array(data.values, dtype=np.float32).reshape(1, 5, 3)
-        pred_scaled = model.predict(arr)
-        pred = scaler.inverse_transform(pred_scaled)
+        # Convert input
+        arr = np.array(data.values, dtype=np.float32)
+
+        if arr.shape != (5, 3):
+            return {"error": "Input must be shape (5, 3)"}
+
+        # Scale INPUT
+        flat = arr.reshape(-1, 3)
+        scaled = scaler.transform(flat)
+        scaled = scaled.reshape(1, 5, 3)
+
+        # Predict
+        pred = model.predict(scaled)
+
         return {"predicted_aqi": float(pred[0][0])}
 
     except Exception as e:
         print("❌ Prediction error:", e)
-        return {
-            "error": str(e),
-            "predicted_aqi": None
-        }
+        return {"error": str(e)}
