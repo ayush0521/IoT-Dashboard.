@@ -86,12 +86,29 @@ def get_data():
     try:
         response = requests.get(SHEETS_API_URL, timeout=10)
         response.raise_for_status()
-        return response.json()
+        raw = response.json()
+
+        # 🔑 Handle both dict and list responses
+        if isinstance(raw, list):
+            latest = raw[-1]
+        else:
+            latest = raw
+
+        return {
+            "temperature": float(latest.get("temperature") or latest.get("Temperature")),
+            "humidity": float(latest.get("humidity") or latest.get("Humidity")),
+            "aqi": float(latest.get("aqi") or latest.get("AQI")),
+            "lat": float(latest.get("lat", 19.1739)),
+            "lon": float(latest.get("lon", 77.3228)),
+            "timestamp": latest.get("timestamp", "")
+        }
+
     except Exception as e:
         return {
             "error": "Failed to fetch Google Sheets data",
             "details": str(e)
         }
+
 
 @app.get("/history")
 def get_history():
@@ -148,10 +165,3 @@ def predict_aqi(data: AQIInput):
     except Exception as e:
         print("❌ Prediction error:", e)
         return {"error": str(e)}
-
-import os
-import uvicorn
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app:app", host="0.0.0.0", port=port)
