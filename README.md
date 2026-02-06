@@ -1,50 +1,55 @@
-<h2 align="center">🌦️ IoT-Enabled Hyperlocal Weather & Air Quality Monitoring Dashboard</h2>
+<h1 align="center">🌦️ IoT-Enabled Hyperlocal Weather & Air Quality Monitoring Dashboard</h1>
 
 <p align="center">
-End-to-end <b>IoT + Cloud + Web Visualization system</b><br/>
+<b>End-to-end IoT + Cloud + Web + ML system</b><br/>
 Real-time hyperlocal environmental monitoring with analytics & prediction<br/>
-Focused on <b>usability</b>, <b>scalability</b>, and <b>clean system design</b>
+Built for <b>real deployment</b>, not just an academic demo
 </p>
 
 <p align="center">
-🔗 <b>Live Dashboard:</b>
-<a href="https://ayush0521.github.io/iot-hyperlocal-weather-aqi-dashboard/" target="_blank">
-  ayush0521.github.io/iot-hyperlocal-weather-aqi-dashboard
+🌐 <b>Live Dashboard:</b>
+<a href="https://iot-hyperlocal-weather-aqi-dashboard.vercel.app" target="_blank">
+https://iot-hyperlocal-weather-aqi-dashboard.vercel.app
 </a>
 </p>
 
 <hr/>
 
-<h3>🧠 Project Overview</h3>
+<h2>🧠 Project Overview</h2>
+
 <p>
 This project implements a <b>complete production-style IoT pipeline</b> — from
-sensor-level data acquisition to a publicly accessible analytics dashboard.
+sensor-level data acquisition to a publicly accessible analytics dashboard with
+predictive insights.
 </p>
+
 <p>
-Environmental data such as <b>temperature, humidity, and air quality</b> is collected
-using an ESP32-based embedded system, transmitted over Wi-Fi, stored in the cloud,
-and visualized in real time using interactive charts, maps, and browser-side
-machine learning predictions.
+Environmental data such as <b>temperature, humidity, and air quality (AQI)</b> is
+collected using an ESP32-based embedded system, transmitted over Wi-Fi, stored in
+the cloud, processed by a backend ML service, and visualized using a modern web UI.
 </p>
 
 <hr/>
 
-<h3>🚀 Key Capabilities</h3>
+<h2>🚀 Key Capabilities</h2>
+
 <ul>
-  <li>Real-time environmental data acquisition</li>
-  <li>Cloud-based storage using Google Sheets</li>
-  <li>REST-style JSON APIs via Google Apps Script</li>
-  <li>Static dashboard deployment on GitHub Pages</li>
-  <li>Client-side ML predictions (no backend ML server)</li>
+  <li>Real-time hyperlocal environmental monitoring</li>
+  <li>Cloud-based data storage and retrieval</li>
+  <li>REST API backend with ML inference</li>
+  <li>Interactive dashboards with charts & maps</li>
+  <li>Future-value prediction for temperature, humidity, and AQI</li>
+  <li>Independent deployment of frontend and backend</li>
 </ul>
 
 <hr/>
 
-<h3>🔥 Sensor Monitoring</h3>
+<h2>🔥 Sensor Monitoring</h2>
+
 <ul>
   <li><b>Temperature (°C)</b> — DHT11</li>
   <li><b>Humidity (%)</b> — DHT11</li>
-  <li><b>Air Quality (AQI)</b> — MQ135
+  <li><b>Air Quality Index (AQI)</b> — MQ135
     <ul>
       <li>Calibration applied</li>
       <li>Noise filtering & signal smoothing</li>
@@ -54,47 +59,58 @@ machine learning predictions.
 
 <hr/>
 
-<h3>🗺️ Location Visualization</h3>
+<h2>🗺️ Location Visualization</h2>
+
 <ul>
   <li>Live device location using Leaflet + OpenStreetMap</li>
-  <li>Automatic fallback to browser-based geolocation</li>
+  <li>Browser-based geolocation fallback</li>
   <li>Latitude & longitude displayed on the dashboard</li>
 </ul>
 
 <hr/>
 
-<h3>📊 Data Visualization & Prediction</h3>
+<h2>📊 Data Visualization & Prediction</h2>
+
 <ul>
-  <li>Latest readings panel for quick monitoring</li>
-  <li>Mini sparkline trends for each parameter</li>
-  <li>Fixed-frame Chart.js graphs (no layout jumps)</li>
-  <li><b>Client-side prediction engine</b>
-    <ul>
-      <li>Predicts next 6 values for temperature, humidity, and AQI</li>
-      <li>Implemented using lightweight linear regression</li>
-    </ul>
-  </li>
+  <li>Live value cards for quick monitoring</li>
+  <li>Historical trend charts (Chart.js)</li>
+  <li>Prediction charts for next-step forecasting</li>
+  <li>Stable layout with fixed-height graphs</li>
+</ul>
+
+<p>
+Prediction logic uses a combination of:
+</p>
+
+<ul>
+  <li>Trend-based forecasting for temperature & humidity</li>
+  <li>LSTM-based ML model for AQI prediction</li>
+  <li>Bounded projections to maintain realistic values</li>
 </ul>
 
 <hr/>
 
-<h3>🌐 System Architecture</h3>
+<h2>🌐 System Architecture</h2>
 
 <pre>
 ESP32 (DHT11 + MQ135)
         ↓  Wi-Fi
-Google Apps Script (Web API)
+Cloud Data Ingestion
         ↓
-Google Sheets (Cloud Database)
+Backend API (FastAPI + ML)
         ↓
-Static Web Dashboard (GitHub Pages)
+Render (Backend Deployment)
+        ↓
+Frontend (HTML/CSS/JS)
+        ↓
+Vercel (Frontend Deployment)
         ↓
 End User (Browser)
 </pre>
 
 <hr/>
 
-<h3>🛠️ Technology Stack</h3>
+<h2>🛠️ Technology Stack</h2>
 
 <table>
   <thead>
@@ -113,12 +129,12 @@ End User (Browser)
       <td>Wi-Fi</td>
     </tr>
     <tr>
-      <td>Cloud Backend</td>
-      <td>Google Apps Script</td>
+      <td>Backend</td>
+      <td>Python, FastAPI, TensorFlow, scikit-learn</td>
     </tr>
     <tr>
-      <td>Database</td>
-      <td>Google Sheets</td>
+      <td>ML Models</td>
+      <td>LSTM (AQI), Scaler-based preprocessing</td>
     </tr>
     <tr>
       <td>Frontend</td>
@@ -129,29 +145,65 @@ End User (Browser)
       <td>Chart.js, Leaflet.js</td>
     </tr>
     <tr>
-      <td>Hosting</td>
-      <td>GitHub Pages</td>
+      <td>Backend Hosting</td>
+      <td>Render</td>
+    </tr>
+    <tr>
+      <td>Frontend Hosting</td>
+      <td>Vercel</td>
     </tr>
   </tbody>
 </table>
 
 <hr/>
 
-<h3>🧩 Engineering Focus</h3>
+<h2>📂 Repository Structure</h2>
+
+<pre>
+iot-hyperlocal-weather-aqi-dashboard/
+├── backend/        # API + ML inference (Render)
+│   ├── model/      # Trained ML models
+│   ├── app.py
+│   ├── requirements.txt
+│   └── README.md
+│
+├── frontend/       # Web dashboard (Vercel)
+│   ├── index.html
+│   ├── style.css
+│   ├── script.js
+│   └── README.md
+│
+├── docs/           # Academic documentation
+│   ├── report/
+│   ├── research_paper/
+│   ├── ESP32_Hyperlocal_Weather_ML.pptx
+│   └── abstract/
+│
+├── hardware/       # ESP32 & sensor code
+├── .gitignore
+└── README.md       # This file
+</pre>
+
+<hr/>
+
+<h2>🧩 Engineering Focus</h2>
+
 <ul>
-  <li>Clear separation of device, cloud, and UI layers</li>
-  <li>No unnecessary backend infrastructure</li>
-  <li>Maintainable and extensible system design</li>
-  <li>Built for real-world deployment scenarios</li>
+  <li>Clear separation of device, backend, and UI layers</li>
+  <li>Independent deployment pipelines</li>
+  <li>Scalable, cloud-ready architecture</li>
+  <li>Maintainable and extensible design</li>
+  <li>Optimized for real-world deployment scenarios</li>
 </ul>
 
 <hr/>
 
-<h3>👨‍💻 Author</h3>
+<h2>👨‍💻 Author</h2>
+
 <p>
 <b>Ayush Padmawar</b><br/>
 Electronics & Telecommunication Engineering<br/>
-Building practical systems across <b>IoT</b>, <b>full-stack development</b>, and <b>applied AI</b>
+Focused on building practical systems across <b>IoT</b>, <b>full-stack development</b>, and <b>applied AI</b>
 </p>
 
 <p>
@@ -164,5 +216,5 @@ ayush-padmawar21
 <hr/>
 
 <p align="center">
-<i>Built as a real deployment-focused system, not just an academic demo.</i>
+<i>Designed, implemented, and deployed as a real-world system — not just a prototype.</i>
 </p>
