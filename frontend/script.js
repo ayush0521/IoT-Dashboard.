@@ -1,5 +1,5 @@
 /* ================= CONFIG ================= */
-const BACKEND_BASE = "http://127.0.0.1:8000";
+const BACKEND_BASE = "https://iot-hyperlocal-weather-aqi-dashboard.onrender.com";
 
 /* ================= GLOBALS ================= */
 let map = null;
@@ -239,3 +239,4 @@ function boundedAQITrend(base) {
 function clamp(val, min, max) {
   return Math.min(Math.max(val, min), max);
 }
+
