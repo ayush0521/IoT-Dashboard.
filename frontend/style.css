@@ -162,3 +162,17 @@ body {
     width: 100%;
   }
 }
+
+.location-card {
+  display: flex;
+  flex-direction: column;
+}
+
+#map {
+  height: 260px;
+  width: 100%;
+  min-height: 260px;
+  margin-top: 12px;
+  border-radius: 14px;
+  overflow: hidden;
+}
