@@ -5,6 +5,21 @@ import numpy as np
 import joblib
 import os
 import tensorflow as tf
+import requests
+import pandas as pd
+
+# ================= HISTORICAL DATA =================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, "CLEANED_DATA.csv")
+
+df_history = pd.read_csv(CSV_PATH)
+print("📊 Historical rows loaded:", len(df_history))
+print(df_history.head(2))
+
+
+# Parse timestamp properly
+df_history["Timestamp"] = pd.to_datetime(df_history["Timestamp"])
+
 
 # -----------------------------
 # App initialization
@@ -25,6 +40,7 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "model", "lstm_aqi_model_clean.keras")
 SCALER_PATH = os.path.join(BASE_DIR, "model", "aqi_scaler.pkl")
+SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbxpRz4eC9di4uCqZ1HeRjt_8WdXHHGYEkrDgO2mfKB_suW8F1X_Pvr6bRdtSDf1K6w-ZA/exec"
 
 # -----------------------------
 # Globals
@@ -65,6 +81,44 @@ def health():
         "model_loaded": model is not None,
         "scaler_loaded": scaler is not None
     }
+@app.get("/data")
+def get_data():
+    try:
+        response = requests.get(SHEETS_API_URL, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {
+            "error": "Failed to fetch Google Sheets data",
+            "details": str(e)
+        }
+
+@app.get("/history")
+def get_history():
+    try:
+        history = []
+
+        # 🔑 Normalize column names once
+        df = df_history.copy()
+        df.columns = [c.strip() for c in df.columns]
+
+        for _, row in df.iterrows():
+            history.append({
+                "timestamp": row["Timestamp"].strftime("%Y-%m-%d %H:%M"),
+                "temperature": float(row["Avg Temperature"]),
+                "humidity": float(row["Avg Humidity"]),
+                "aqi": float(row["Avg AQI"]),
+                "category": str(row["AQI_Category"])
+            })
+
+        return history
+
+    except Exception as e:
+        print("❌ HISTORY ERROR:", e)
+        return {
+            "error": "History parsing failed",
+            "details": str(e)
+        }
 
 # -----------------------------
 # Prediction endpoint
