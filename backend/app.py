@@ -84,55 +84,39 @@ def health():
 @app.get("/data")
 def get_data():
     try:
-        response = requests.get(SHEETS_API_URL, timeout=15)
+        response = requests.get(SHEETS_API_URL, timeout=10)
         response.raise_for_status()
 
         raw = response.json()
-        print("📥 RAW SHEETS RESPONSE:", raw)
 
-        # Case 1: Google Script returns dict with 'data'
-        if isinstance(raw, dict) and "data" in raw:
-            rows = raw["data"]
+        # 🔒 Validate structure strictly
+        if not isinstance(raw, dict):
+            raise ValueError("Google Sheets response is not a dict")
 
-        # Case 2: Direct list
-        elif isinstance(raw, list):
-            rows = raw
+        if "latest" not in raw:
+            raise ValueError("Missing 'latest' key")
 
-        else:
-            return {
-                "ok": false,
-                "error": "Unexpected Google Sheets format",
-                "raw_type": str(type(raw))
-            }
-
-        if not rows or not isinstance(rows, list):
-            return {
-                "ok": false,
-                "error": "No rows found in Google Sheets"
-            }
-
-        # Take latest row
-        latest = rows[-1]
-
-        # SAFELY extract values
-        temperature = float(latest.get("Temperature", 0) or 0)
-        humidity = float(latest.get("Humidity", 0) or 0)
-        aqi = float(latest.get("AQI", 0) or 0)
+        latest = raw["latest"]
 
         return {
-            "ok": true,
-            "temperature": temperature,
-            "humidity": humidity,
-            "aqi": aqi
+            "temperature": float(latest.get("temperature", 0)),
+            "humidity": float(latest.get("humidity", 0)),
+            "aqi": float(latest.get("aqi", 0)),
+            "category": latest.get("category", "Unknown"),
+            "history": raw.get("history", [])
         }
 
     except Exception as e:
         print("❌ DATA ERROR:", e)
         return {
-            "ok": false,
-            "error": "Failed to fetch live data",
-            "details": str(e)
+            "temperature": 0,
+            "humidity": 0,
+            "aqi": 0,
+            "category": "Unavailable",
+            "history": [],
+            "error": str(e)
         }
+
 
 
 @app.get("/history")
@@ -194,6 +178,7 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
 
 
