@@ -85,7 +85,7 @@ Live URL:
 </p>
 
 <pre>
-https://ayush0521.github.io/iot-hyperlocal-weather-aqi-dashboard/
+https://iot-hyperlocal-weather-aqi-dashboar.vercel.app/
 </pre>
 
 <p>
