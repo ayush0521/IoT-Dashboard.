@@ -54,16 +54,20 @@ async function fetchAllData() {
   try {
     console.log("🔄 Fetching backend data...");
     const res = await fetch(`${BACKEND_BASE}/data`);
+
+    if (!res.ok) throw new Error("Backend not reachable");
+
     const payload = await res.json();
 
-    // 🔒 STRICT STRUCTURE CHECK
-    if (!payload?.raw?.latest || !payload?.raw?.history) {
+    if (!payload.raw || !payload.raw.latest || !payload.raw.history) {
       throw new Error("Invalid backend response structure");
     }
 
-    renderCurrent(payload.raw.latest);
-    renderHistory(payload.raw.history);
-    runPrediction(payload.raw.history);
+    const { latest, history } = payload.raw;
+
+    renderCurrent(latest);
+    renderHistory(history);
+    runPrediction(history);
 
   } catch (err) {
     console.error("❌ Data fetch failed:", err.message);
@@ -72,12 +76,12 @@ async function fetchAllData() {
 
 /* ================= CURRENT UI ================= */
 function renderCurrent(latest) {
-  document.getElementById("temp").textContent = `${latest.temperature} °C`;
-  document.getElementById("hum").textContent = `${latest.humidity} %`;
-  document.getElementById("aqi").textContent = latest.aqi;
+  document.getElementById("temp").textContent = latest.temperature ?? "--";
+  document.getElementById("hum").textContent = latest.humidity ?? "--";
+  document.getElementById("aqi").textContent = latest.aqi ?? "--";
 
   const badge = document.getElementById("aqiBadge");
-  badge.textContent = latest.category;
+  badge.textContent = latest.category ?? "Unknown";
 
   badge.style.background =
     latest.aqi <= 50 ? "#4caf50" :
@@ -98,40 +102,26 @@ function renderHistory(history) {
 async function runPrediction(history) {
   if (history.length < 5) return;
 
-  drawPredictionChart(
-    "predTemp",
-    multiStepTrend(history.map(h => h.temperature), -0.3, 0.3),
-    "#ff7043",
-    20,
-    40
-  );
+  drawPredictionChart("predTemp", multiStepTrend(history.map(h => h.temperature), -0.3, 0.3), "#ff7043", 20, 40);
+  drawPredictionChart("predHum", multiStepTrend(history.map(h => h.humidity), -0.8, 0.8), "#42a5f5", 30, 90);
 
-  drawPredictionChart(
-    "predHum",
-    multiStepTrend(history.map(h => h.humidity), -0.8, 0.8),
-    "#42a5f5",
-    30,
-    90
-  );
-
-  const last5 = history.slice(-5);
-  const values = last5.map(d => [d.temperature, d.humidity, d.aqi]);
   const lastObservedAQI = history.at(-1).aqi;
 
   try {
     const res = await fetch(`${BACKEND_BASE}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ values })
+      body: JSON.stringify({
+        values: history.slice(-5).map(d => [d.temperature, d.humidity, d.aqi])
+      })
     });
 
     const result = await res.json();
-    let mlDelta = clamp(result.predicted_aqi, -20, 20);
-    const baseAQI = clamp(lastObservedAQI + mlDelta, 10, 300);
+    const delta = clamp(result.predicted_aqi, -20, 20);
 
     drawPredictionChart(
       "predAqi",
-      boundedAQITrend(baseAQI),
+      boundedAQITrend(lastObservedAQI + delta),
       "#ff6ec7",
       0,
       300
@@ -148,10 +138,7 @@ function drawLineChart(id, labels, data, color, minY, maxY) {
 
   histCharts[id] = new Chart(document.getElementById(id), {
     type: "line",
-    data: {
-      labels,
-      datasets: [{ data, borderColor: color, borderWidth: 3, tension: 0.35 }]
-    },
+    data: { labels, datasets: [{ data, borderColor: color, borderWidth: 3, tension: 0.35 }] },
     options: chartOptions(minY, maxY)
   });
 }
@@ -161,10 +148,7 @@ function drawPredictionChart(id, data, color, minY, maxY) {
 
   predCharts[id] = new Chart(document.getElementById(id), {
     type: "line",
-    data: {
-      labels: ["T+1", "T+2", "T+3", "T+4", "T+5"],
-      datasets: [{ data, borderColor: color, borderWidth: 3, tension: 0.4 }]
-    },
+    data: { labels: ["T+1", "T+2", "T+3", "T+4", "T+5"], datasets: [{ data, borderColor: color, tension: 0.4 }] },
     options: chartOptions(minY, maxY)
   });
 }
@@ -174,11 +158,11 @@ function chartOptions(minY, maxY) {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
-    scales: { x: { display: false }, y: { min: minY, max: maxY } }
+    scales: { y: { min: minY, max: maxY } }
   };
 }
 
-/* ================= HELPERS ================= */
+/* ================= MATH HELPERS ================= */
 function smooth(data, window = 3) {
   return data.map((_, i, arr) => {
     const slice = arr.slice(Math.max(0, i - window + 1), i + 1);
@@ -199,6 +183,6 @@ function boundedAQITrend(base) {
   );
 }
 
-function clamp(val, min, max) {
-  return Math.min(Math.max(val, min), max);
+function clamp(v, min, max) {
+  return Math.min(Math.max(v, min), max);
 }
