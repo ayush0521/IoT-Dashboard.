@@ -89,8 +89,8 @@ async function fetchAllData() {
 
 /* ================= CURRENT ================= */
 function renderCurrent(data) {
-  document.getElementById("temp").textContent = `${data.temperature}`;
-  document.getElementById("hum").textContent = `${data.humidity}`;
+  document.getElementById("temp").textContent = `${data.temperature} °C`;
+  document.getElementById("hum").textContent = `${data.humidity} %`;
   document.getElementById("aqi").textContent = data.aqi;
 
   const badge = document.getElementById("aqiBadge");
@@ -196,4 +196,5 @@ function boundedAQITrend(base) {
     Math.min(300, Math.max(0, Math.round(base + (Math.random() * 8 - 4) * (i + 1))))
   );
 }
+
 
