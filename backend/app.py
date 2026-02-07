@@ -88,32 +88,44 @@ def get_data():
         response.raise_for_status()
         raw = response.json()
 
-        # Case 1: list of rows
-        if isinstance(raw, list) and len(raw) > 0:
-            latest = raw[-1]
+        # Handle dict OR list response
+        if isinstance(raw, dict):
+            raw = [raw]
 
-        # Case 2: dict with rows
-        elif isinstance(raw, dict) and "data" in raw:
-            latest = raw["data"][-1]
+        cleaned = []
 
-        else:
-            return {"error": "Unexpected Google Sheets format"}
+        for row in raw:
+            try:
+                temp = float(row.get("temperature") or 0)
+                hum = float(row.get("humidity") or 0)
+                aqi = float(row.get("aqi") or 0)
 
-        return {
-            "latest": {
-                "temperature": float(latest["temperature"]),
-                "humidity": float(latest["humidity"]),
-                "aqi": float(latest["aqi"]),
-                "category": str(latest.get("category", "Unknown"))
+                cleaned.append({
+                    "temperature": temp,
+                    "humidity": hum,
+                    "aqi": aqi
+                })
+            except Exception:
+                # Skip bad rows silently
+                continue
+
+        # Always return something predictable
+        if not cleaned:
+            return {
+                "temperature": 0,
+                "humidity": 0,
+                "aqi": 0
             }
-        }
+
+        return cleaned[-1]  # latest row only
 
     except Exception as e:
         return {
-            "error": "Failed to fetch live data",
-            "details": str(e)
+            "temperature": 0,
+            "humidity": 0,
+            "aqi": 0,
+            "error": str(e)
         }
-
 
 @app.get("/history")
 def get_history():
@@ -174,5 +186,6 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
 
