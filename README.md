@@ -8,7 +8,7 @@ Built for <b>real deployment</b>, not just an academic demo
 
 <p align="center">
 🌐 <b>Live Dashboard:</b>
-<a href="https://iot-hyperlocal-weather-aqi-dashboard.vercel.app" target="_blank">
+<a href="https://iot-hyperlocal-weather-aqi-dashboar.vercel.app/" target="_blank">
 https://iot-hyperlocal-weather-aqi-dashboard.vercel.app
 </a>
 </p>
