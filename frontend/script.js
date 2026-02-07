@@ -64,28 +64,27 @@ function updateLocation() {
 async function fetchAllData() {
   try {
     console.log("🔄 Fetching backend data...");
-    const res = await fetch(`${BACKEND_BASE}/data`);
-    const data = await res.json();
 
-    console.log("✅ Backend response:", data);
+    // 1️⃣ Current snapshot
+    const currentRes = await fetch(`${BACKEND_BASE}/data`);
+    const current = await currentRes.json();
 
-    if (
-      typeof data.temperature !== "number" ||
-      typeof data.humidity !== "number" ||
-      typeof data.aqi !== "number" ||
-      !Array.isArray(data.history)
-    ) {
-      throw new Error("Invalid backend response structure");
-    }
+    renderCurrent(current);
 
-    renderCurrent(data);
-    renderHistory(data.history);
-    runPrediction(data.history);
+    // 2️⃣ Cleaned historical data
+    const histRes = await fetch(`${BACKEND_BASE}/history`);
+    const history = await histRes.json();
+
+    renderHistory(history);
+    runPrediction(history);
+
+    console.log("✅ All data loaded successfully");
 
   } catch (err) {
     console.error("❌ Data fetch failed:", err.message);
   }
 }
+
 
 /* ================= CURRENT ================= */
 function renderCurrent(data) {
@@ -106,10 +105,34 @@ function renderCurrent(data) {
 function renderHistory(history) {
   const labels = history.map(h => h.timestamp);
 
-  drawLineChart("histTemp", labels, smooth(history.map(h => h.temperature)), "#ff7043", 20, 40);
-  drawLineChart("histHum", labels, smooth(history.map(h => h.humidity)), "#42a5f5", 30, 90);
-  drawLineChart("histAqi", labels, smooth(history.map(h => h.aqi)), "#ab47bc", 0, 300);
+  drawLineChart(
+    "histTemp",
+    labels,
+    history.map(h => h.temperature),
+    "#ff7043",
+    20,
+    40
+  );
+
+  drawLineChart(
+    "histHum",
+    labels,
+    history.map(h => h.humidity),
+    "#42a5f5",
+    30,
+    90
+  );
+
+  drawLineChart(
+    "histAqi",
+    labels,
+    history.map(h => h.aqi),
+    "#ab47bc",
+    0,
+    300
+  );
 }
+
 
 /* ================= PREDICTIONS ================= */
 function runPrediction(history) {
@@ -196,5 +219,6 @@ function boundedAQITrend(base) {
     Math.min(300, Math.max(0, Math.round(base + (Math.random() * 8 - 4) * (i + 1))))
   );
 }
+
 
 
