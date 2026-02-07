@@ -165,3 +165,8 @@ def predict_aqi(data: AQIInput):
     except Exception as e:
         print("❌ Prediction error:", e)
         return {"error": str(e)}
+        
+@app.get("/debug/routes")
+def list_routes():
+    return [route.path for route in app.routes]
+
