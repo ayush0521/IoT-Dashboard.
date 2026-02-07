@@ -47,8 +47,8 @@ the cloud, processed by a backend ML service, and visualized using a modern web 
 <h2>🔥 Sensor Monitoring</h2>
 
 <ul>
-  <li><b>Temperature (°C)</b> — DHT11</li>
-  <li><b>Humidity (%)</b> — DHT11</li>
+  <li><b>Temperature (°C)</b> — DHT22</li>
+  <li><b>Humidity (%)</b> — DHT22</li>
   <li><b>Air Quality Index (AQI)</b> — MQ135
     <ul>
       <li>Calibration applied</li>
@@ -94,7 +94,7 @@ Prediction logic uses a combination of:
 <h2>🌐 System Architecture</h2>
 
 <pre>
-ESP32 (DHT11 + MQ135)
+ESP32 (DHT22 + MQ135)
         ↓  Wi-Fi
 Cloud Data Ingestion
         ↓
@@ -123,7 +123,7 @@ End User (Browser)
   <tbody>
     <tr>
       <td>Embedded</td>
-      <td>ESP32 DevKit V1, DHT11, MQ135</td>
+      <td>ESP32 DevKit V1, DHT22, MQ135</td>
     </tr>
     <tr>
       <td>Connectivity</td>
