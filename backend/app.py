@@ -84,26 +84,54 @@ def health():
 @app.get("/data")
 def get_data():
     try:
-        response = requests.get(SHEETS_API_URL, timeout=10)
+        response = requests.get(SHEETS_API_URL, timeout=15)
         response.raise_for_status()
 
         raw = response.json()
+        print("📥 RAW SHEETS RESPONSE:", raw)
 
-        print("========== RAW GOOGLE SHEETS RESPONSE ==========")
-        print(raw)
-        print("========== TYPE:", type(raw), "==========")
+        # Case 1: Google Script returns dict with 'data'
+        if isinstance(raw, dict) and "data" in raw:
+            rows = raw["data"]
+
+        # Case 2: Direct list
+        elif isinstance(raw, list):
+            rows = raw
+
+        else:
+            return {
+                "ok": false,
+                "error": "Unexpected Google Sheets format",
+                "raw_type": str(type(raw))
+            }
+
+        if not rows or not isinstance(rows, list):
+            return {
+                "ok": false,
+                "error": "No rows found in Google Sheets"
+            }
+
+        # Take latest row
+        latest = rows[-1]
+
+        # SAFELY extract values
+        temperature = float(latest.get("Temperature", 0) or 0)
+        humidity = float(latest.get("Humidity", 0) or 0)
+        aqi = float(latest.get("AQI", 0) or 0)
 
         return {
-            "debug": True,
-            "raw": raw,
-            "type": str(type(raw))
+            "ok": true,
+            "temperature": temperature,
+            "humidity": humidity,
+            "aqi": aqi
         }
 
     except Exception as e:
-        print("❌ DATA FETCH ERROR:", e)
+        print("❌ DATA ERROR:", e)
         return {
-            "debug": True,
-            "error": str(e)
+            "ok": false,
+            "error": "Failed to fetch live data",
+            "details": str(e)
         }
 
 
@@ -166,6 +194,7 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
 
 
