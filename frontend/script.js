@@ -7,9 +7,9 @@ let marker = null;
 let histCharts = {};
 let predCharts = {};
 
+/* ================= BOOT ================= */
 console.log("✅ script.js loaded");
 
-/* ================= BOOT ================= */
 document.addEventListener("DOMContentLoaded", () => {
   console.log("📄 DOM loaded");
   updateLocation();
@@ -31,44 +31,39 @@ function initMap(lat, lon) {
 function updateLocation() {
   if (!navigator.geolocation) return;
 
-  navigator.geolocation.getCurrentPosition(pos => {
-    const { latitude, longitude } = pos.coords;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
 
-    document.getElementById("lat").textContent = latitude.toFixed(4);
-    document.getElementById("lon").textContent = longitude.toFixed(4);
+      document.getElementById("lat").textContent = lat.toFixed(4);
+      document.getElementById("lon").textContent = lon.toFixed(4);
 
-    if (!map) initMap(latitude, longitude);
-    else {
-      marker.setLatLng([latitude, longitude]);
-      map.setView([latitude, longitude]);
-    }
-  });
+      if (!map) initMap(lat, lon);
+      else {
+        marker.setLatLng([lat, lon]);
+        map.setView([lat, lon]);
+      }
+    },
+    err => console.error("Geolocation error:", err.message)
+  );
 }
 
 /* ================= DATA FETCH ================= */
 async function fetchAllData() {
   try {
     console.log("🔄 Fetching backend data...");
-
     const res = await fetch(`${BACKEND_BASE}/data`);
-    const data = await res.json();
+    const payload = await res.json();
 
-    /* ---------- HARD VALIDATION ---------- */
-    if (
-      !data ||
-      typeof data !== "object" ||
-      !data.latest ||
-      !data.history ||
-      !Array.isArray(data.history)
-    ) {
+    // 🔒 STRICT STRUCTURE CHECK
+    if (!payload?.raw?.latest || !payload?.raw?.history) {
       throw new Error("Invalid backend response structure");
     }
 
-    console.log("✅ Backend data validated");
-
-    renderCurrent(data.latest);
-    renderHistory(data.history);
-    runPrediction(data.history);
+    renderCurrent(payload.raw.latest);
+    renderHistory(payload.raw.history);
+    runPrediction(payload.raw.history);
 
   } catch (err) {
     console.error("❌ Data fetch failed:", err.message);
@@ -94,20 +89,34 @@ function renderCurrent(latest) {
 function renderHistory(history) {
   const labels = history.map(h => h.timestamp);
 
-  drawLineChart("histTemp", labels, history.map(h => h.temperature), "#ff7043", 20, 40);
-  drawLineChart("histHum", labels, history.map(h => h.humidity), "#42a5f5", 30, 90);
-  drawLineChart("histAqi", labels, history.map(h => h.aqi), "#ab47bc", 0, 300);
+  drawLineChart("histTemp", labels, smooth(history.map(h => h.temperature)), "#ff7043", 20, 40);
+  drawLineChart("histHum", labels, smooth(history.map(h => h.humidity)), "#42a5f5", 30, 90);
+  drawLineChart("histAqi", labels, smooth(history.map(h => h.aqi)), "#ab47bc", 0, 300);
 }
 
 /* ================= PREDICTIONS ================= */
 async function runPrediction(history) {
   if (history.length < 5) return;
 
-  drawPredictionChart("predTemp", trend(history.map(h => h.temperature)), "#ff7043", 20, 40);
-  drawPredictionChart("predHum", trend(history.map(h => h.humidity)), "#42a5f5", 30, 90);
+  drawPredictionChart(
+    "predTemp",
+    multiStepTrend(history.map(h => h.temperature), -0.3, 0.3),
+    "#ff7043",
+    20,
+    40
+  );
+
+  drawPredictionChart(
+    "predHum",
+    multiStepTrend(history.map(h => h.humidity), -0.8, 0.8),
+    "#42a5f5",
+    30,
+    90
+  );
 
   const last5 = history.slice(-5);
   const values = last5.map(d => [d.temperature, d.humidity, d.aqi]);
+  const lastObservedAQI = history.at(-1).aqi;
 
   try {
     const res = await fetch(`${BACKEND_BASE}/predict`, {
@@ -116,13 +125,20 @@ async function runPrediction(history) {
       body: JSON.stringify({ values })
     });
 
-    const out = await res.json();
-    const baseAQI = clamp(out.predicted_aqi, 0, 300);
+    const result = await res.json();
+    let mlDelta = clamp(result.predicted_aqi, -20, 20);
+    const baseAQI = clamp(lastObservedAQI + mlDelta, 10, 300);
 
-    drawPredictionChart("predAqi", trend([baseAQI]), "#ff6ec7", 0, 300);
+    drawPredictionChart(
+      "predAqi",
+      boundedAQITrend(baseAQI),
+      "#ff6ec7",
+      0,
+      300
+    );
 
   } catch (err) {
-    console.error("❌ AQI prediction failed:", err);
+    console.error("❌ AQI prediction failed:", err.message);
   }
 }
 
@@ -134,7 +150,7 @@ function drawLineChart(id, labels, data, color, minY, maxY) {
     type: "line",
     data: {
       labels,
-      datasets: [{ data, borderColor: color, borderWidth: 3 }]
+      datasets: [{ data, borderColor: color, borderWidth: 3, tension: 0.35 }]
     },
     options: chartOptions(minY, maxY)
   });
@@ -147,7 +163,7 @@ function drawPredictionChart(id, data, color, minY, maxY) {
     type: "line",
     data: {
       labels: ["T+1", "T+2", "T+3", "T+4", "T+5"],
-      datasets: [{ data, borderColor: color, borderWidth: 3 }]
+      datasets: [{ data, borderColor: color, borderWidth: 3, tension: 0.4 }]
     },
     options: chartOptions(minY, maxY)
   });
@@ -158,18 +174,31 @@ function chartOptions(minY, maxY) {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
-    scales: { y: { min: minY, max: maxY } }
+    scales: { x: { display: false }, y: { min: minY, max: maxY } }
   };
 }
 
 /* ================= HELPERS ================= */
-function trend(values) {
+function smooth(data, window = 3) {
+  return data.map((_, i, arr) => {
+    const slice = arr.slice(Math.max(0, i - window + 1), i + 1);
+    return slice.reduce((a, b) => a + b, 0) / slice.length;
+  });
+}
+
+function multiStepTrend(values, minDelta, maxDelta) {
   const last = values.at(-1);
   return Array.from({ length: 5 }, (_, i) =>
-    Math.round((last + Math.random() * 4 - 2) * 10) / 10
+    Math.round((last + (Math.random() * (maxDelta - minDelta) + minDelta) * (i + 1)) * 10) / 10
   );
 }
 
-function clamp(v, min, max) {
-  return Math.min(Math.max(v, min), max);
+function boundedAQITrend(base) {
+  return Array.from({ length: 5 }, (_, i) =>
+    clamp(Math.round(base + (Math.random() * 8 - 4) * (i + 1)), 0, 300)
+  );
+}
+
+function clamp(val, min, max) {
+  return Math.min(Math.max(val, min), max);
 }
