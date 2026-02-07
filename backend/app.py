@@ -86,61 +86,23 @@ def get_data():
     try:
         response = requests.get(SHEETS_API_URL, timeout=10)
         response.raise_for_status()
+
         raw = response.json()
 
-        # Handle list response
-        if isinstance(raw, list) and len(raw) > 0:
-            row = raw[-1]
-
-        # Handle dict response
-        elif isinstance(raw, dict) and "data" in raw:
-            row = raw["data"]
-
-        else:
-            return {
-                "ok": False,
-                "data": None,
-                "error": "Unexpected Google Sheets format"
-            }
-
-        # SAFE parsing
-        def safe_float(val):
-            try:
-                return float(val)
-            except:
-                return None
-
-        payload = {
-            "temperature": safe_float(row.get("temperature")),
-            "humidity": safe_float(row.get("humidity")),
-            "aqi": safe_float(row.get("aqi")),
-            "category": row.get("category") or "Unknown"
-        }
-
-        # If any critical value missing
-        if payload["temperature"] is None or payload["aqi"] is None:
-            return {
-                "ok": False,
-                "data": None,
-                "error": "Incomplete sensor data"
-            }
+        print("========== RAW GOOGLE SHEETS RESPONSE ==========")
+        print(raw)
+        print("========== TYPE:", type(raw), "==========")
 
         return {
-            "ok": True,
-            "data": payload
-        }
-
-    except requests.exceptions.Timeout:
-        return {
-            "ok": False,
-            "data": None,
-            "error": "Google Sheets timeout"
+            "debug": True,
+            "raw": raw,
+            "type": str(type(raw))
         }
 
     except Exception as e:
+        print("❌ DATA FETCH ERROR:", e)
         return {
-            "ok": False,
-            "data": None,
+            "debug": True,
             "error": str(e)
         }
 
@@ -204,6 +166,7 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
 
 
