@@ -81,6 +81,15 @@ def health():
         "model_loaded": model is not None,
         "scaler_loaded": scaler is not None
     }
+def safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except Exception:
+        return default
+
+
 @app.get("/data")
 def get_data():
     try:
@@ -89,25 +98,24 @@ def get_data():
 
         raw = response.json()
 
-        # 🔒 Validate structure strictly
         if not isinstance(raw, dict):
             raise ValueError("Google Sheets response is not a dict")
 
-        if "latest" not in raw:
-            raise ValueError("Missing 'latest' key")
+        if "latest" not in raw or not isinstance(raw["latest"], dict):
+            raise ValueError("Missing or invalid 'latest' data")
 
         latest = raw["latest"]
 
         return {
-            "temperature": float(latest.get("temperature", 0)),
-            "humidity": float(latest.get("humidity", 0)),
-            "aqi": float(latest.get("aqi", 0)),
-            "category": latest.get("category", "Unknown"),
+            "temperature": safe_float(latest.get("temperature")),
+            "humidity": safe_float(latest.get("humidity")),
+            "aqi": safe_float(latest.get("aqi")),
+            "category": str(latest.get("category", "Unknown")),
             "history": raw.get("history", [])
         }
 
     except Exception as e:
-        print("❌ DATA ERROR:", e)
+        print("❌ /data ERROR:", e)
         return {
             "temperature": 0,
             "humidity": 0,
@@ -178,6 +186,7 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
 
 
