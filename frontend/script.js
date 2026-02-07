@@ -54,16 +54,16 @@ function updateLocation() {
 async function fetchAllData() {
   try {
     console.log("🔄 Fetching live data...");
-    const liveRes = await fetch(`${BACKEND_BASE}/data`);
-    const liveData = await liveRes.json();
-    renderCurrent(liveData.latest);
+    const res = await fetch(`${BACKEND_BASE}/data`);
+    const data = await res.json();
 
-    console.log("📊 Fetching cleaned historical data...");
-    const histRes = await fetch(`${BACKEND_BASE}/history`);
-    const history = await histRes.json();
+    if (!data || !data.latest || !data.history) {
+      throw new Error("Invalid backend response structure");
+    }
 
-    renderHistory(history);
-    runPrediction(history);
+    renderCurrent(data.latest);
+    renderHistory(data.history);
+    runPrediction(data.history);
 
   } catch (err) {
     console.error("❌ Data fetch failed:", err);
@@ -72,8 +72,13 @@ async function fetchAllData() {
 
 /* ================= CURRENT UI ================= */
 function renderCurrent(latest) {
-  document.getElementById("temp").textContent = latest.temperature;
-  document.getElementById("hum").textContent = latest.humidity;
+  if (!latest) {
+    console.error("❌ Missing latest data");
+    return;
+  }
+
+  document.getElementById("temp").textContent = `${latest.temperature} °C`;
+  document.getElementById("hum").textContent = `${latest.humidity} %`;
   document.getElementById("aqi").textContent = latest.aqi;
 
   const badge = document.getElementById("aqiBadge");
@@ -87,6 +92,8 @@ function renderCurrent(latest) {
 
 /* ================= HISTORY ================= */
 function renderHistory(history) {
+  if (!Array.isArray(history) || history.length === 0) return;
+
   const labels = history.map(h => h.timestamp);
 
   drawLineChart("histTemp", labels, smooth(history.map(h => h.temperature)), "#ff7043", 20, 40);
@@ -96,7 +103,7 @@ function renderHistory(history) {
 
 /* ================= PREDICTIONS ================= */
 async function runPrediction(history) {
-  if (history.length < 5) return;
+  if (!Array.isArray(history) || history.length < 5) return;
 
   /* ---------- Temperature ---------- */
   drawPredictionChart(
@@ -116,10 +123,9 @@ async function runPrediction(history) {
     90
   );
 
-  /* ---------- AQI (FIXED LOGIC) ---------- */
+  /* ---------- AQI (ML) ---------- */
   const last5 = history.slice(-5);
   const values = last5.map(d => [d.temperature, d.humidity, d.aqi]);
-
   const lastObservedAQI = history.at(-1).aqi;
 
   try {
@@ -132,9 +138,7 @@ async function runPrediction(history) {
     const result = await res.json();
     console.log("🔍 Raw ML AQI output:", result.predicted_aqi);
 
-    // ML gives adjustment, not absolute AQI
-    let mlDelta = clamp(result.predicted_aqi, -20, 20);
-
+    let mlDelta = clamp(result.predicted_aqi ?? 0, -20, 20);
     const baseAQI = clamp(lastObservedAQI + mlDelta, 10, 300);
 
     drawPredictionChart(
@@ -197,12 +201,7 @@ function chartOptions(minY, maxY) {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => `Value: ${ctx.parsed.y}`
-        }
-      }
+      legend: { display: false }
     },
     scales: {
       x: { display: false },
@@ -222,7 +221,6 @@ function smooth(data, window = 3) {
 
 function multiStepTrend(values, minDelta, maxDelta) {
   const last = values.at(-1);
-
   return Array.from({ length: 5 }, (_, i) => {
     const noise = Math.random() * (maxDelta - minDelta) + minDelta;
     return Math.round((last + noise * (i + 1)) * 10) / 10;
@@ -239,4 +237,3 @@ function boundedAQITrend(base) {
 function clamp(val, min, max) {
   return Math.min(Math.max(val, min), max);
 }
-
