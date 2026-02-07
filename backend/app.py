@@ -88,24 +88,29 @@ def get_data():
         response.raise_for_status()
         raw = response.json()
 
-        # 🔑 Handle both dict and list responses
-        if isinstance(raw, list):
+        # Case 1: list of rows
+        if isinstance(raw, list) and len(raw) > 0:
             latest = raw[-1]
+
+        # Case 2: dict with rows
+        elif isinstance(raw, dict) and "data" in raw:
+            latest = raw["data"][-1]
+
         else:
-            latest = raw
+            return {"error": "Unexpected Google Sheets format"}
 
         return {
-            "temperature": float(latest.get("temperature") or latest.get("Temperature")),
-            "humidity": float(latest.get("humidity") or latest.get("Humidity")),
-            "aqi": float(latest.get("aqi") or latest.get("AQI")),
-            "lat": float(latest.get("lat", 19.1739)),
-            "lon": float(latest.get("lon", 77.3228)),
-            "timestamp": latest.get("timestamp", "")
+            "latest": {
+                "temperature": float(latest["temperature"]),
+                "humidity": float(latest["humidity"]),
+                "aqi": float(latest["aqi"]),
+                "category": str(latest.get("category", "Unknown"))
+            }
         }
 
     except Exception as e:
         return {
-            "error": "Failed to fetch Google Sheets data",
+            "error": "Failed to fetch live data",
             "details": str(e)
         }
 
@@ -169,4 +174,5 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
