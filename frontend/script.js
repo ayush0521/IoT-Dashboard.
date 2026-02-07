@@ -32,16 +32,15 @@ function updateLocation() {
   if (!navigator.geolocation) return;
 
   navigator.geolocation.getCurrentPosition(pos => {
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
+    const { latitude, longitude } = pos.coords;
 
-    document.getElementById("lat").textContent = lat.toFixed(4);
-    document.getElementById("lon").textContent = lon.toFixed(4);
+    document.getElementById("lat").textContent = latitude.toFixed(4);
+    document.getElementById("lon").textContent = consider longitude.toFixed(4);
 
-    if (!map) initMap(lat, lon);
+    if (!map) initMap(latitude, longitude);
     else {
-      marker.setLatLng([lat, lon]);
-      map.setView([lat, lon]);
+      marker.setLatLng([latitude, longitude]);
+      map.setView([latitude, longitude]);
     }
   });
 }
@@ -55,12 +54,12 @@ async function fetchAllData() {
 
     console.log("📦 Backend response:", data);
 
-    // 🔑 STRICT STRUCTURE CHECK (CORRECT ONE)
-    if (!data || !data.latest || !data.history) {
+    // ✅ VALIDATION
+    if (!data || !data.history || !Array.isArray(data.history)) {
       throw new Error("Invalid backend response structure");
     }
 
-    renderCurrent(data.latest);
+    renderCurrent(data);
     renderHistory(data.history);
     runPrediction(data.history);
 
@@ -70,17 +69,17 @@ async function fetchAllData() {
 }
 
 /* ================= CURRENT UI ================= */
-function renderCurrent(latest) {
-  document.getElementById("temp").textContent = `${latest.temperature} °C`;
-  document.getElementById("hum").textContent = `${latest.humidity} %`;
-  document.getElementById("aqi").textContent = latest.aqi;
+function renderCurrent(data) {
+  document.getElementById("temp").textContent = data.temperature;
+  document.getElementById("hum").textContent = data.humidity;
+  document.getElementById("aqi").textContent = data.aqi;
 
   const badge = document.getElementById("aqiBadge");
-  badge.textContent = latest.category;
+  badge.textContent = data.category;
 
   badge.style.background =
-    latest.aqi <= 50 ? "#4caf50" :
-    latest.aqi <= 100 ? "#ffc107" :
+    data.aqi <= 50 ? "#4caf50" :
+    data.aqi <= 100 ? "#ffc107" :
     "#f44336";
 }
 
@@ -88,41 +87,30 @@ function renderCurrent(latest) {
 function renderHistory(history) {
   const labels = history.map(h => h.timestamp);
 
-  drawLineChart("histTemp", labels, history.map(h => h.temperature), "#ff7043", 20, 40);
-  drawLineChart("histHum", labels, history.map(h => h.humidity), "#42a5f5", 30, 90);
-  drawLineChart("histAqi", labels, history.map(h => h.aqi), "#ab47bc", 0, 300);
+  drawLineChart("histTemp", labels, smooth(history.map(h => h.temperature)), "#ff7043", 20, 40);
+  drawLineChart("histHum", labels, smooth(history.map(h => h.humidity)), "#42a5f5", 30, 90);
+  drawLineChart("histAqi", labels, smooth(history.map(h => h.aqi)), "#ab47bc", 0, 300);
 }
 
 /* ================= PREDICTIONS ================= */
 async function runPrediction(history) {
   if (history.length < 5) return;
 
-  const last5 = history.slice(-5);
-  const values = last5.map(d => [d.temperature, d.humidity, d.aqi]);
+  drawPredictionChart("predTemp",
+    multiStepTrend(history.map(h => h.temperature), -0.3, 0.3),
+    "#ff7043", 20, 40
+  );
 
-  try {
-    const res = await fetch(`${BACKEND_BASE}/predict`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ values })
-    });
+  drawPredictionChart("predHum",
+    multiStepTrend(history.map(h => h.humidity), -0.8, 0. attachment),
+    "#42a5f5", 30, 90
+  );
 
-    const result = await res.json();
-    console.log("🔮 ML prediction:", result);
-
-    const baseAQI = history.at(-1).aqi;
-
-    drawPredictionChart(
-      "predAqi",
-      Array.from({ length: 5 }, (_, i) => baseAQI + i * 2),
-      "#ff6ec7",
-      0,
-      300
-    );
-
-  } catch (err) {
-    console.error("❌ Prediction failed:", err);
-  }
+  const lastAQI = history.at(-1).aqi;
+  drawPredictionChart("predAqi",
+    boundedAQITrend(lastAQI),
+    "#ff6ec7", 0, 300
+  );
 }
 
 /* ================= CHART HELPERS ================= */
@@ -133,13 +121,7 @@ function drawLineChart(id, labels, data, color, minY, maxY) {
     type: "line",
     data: {
       labels,
-      datasets: [{
-        data,
-        borderColor: color,
-        borderWidth: 3,
-        tension: 0.35,
-        pointRadius: 2
-      }]
+      datasets: [{ data, borderColor: color, tension: 0.35 }]
     },
     options: chartOptions(minY, maxY)
   });
@@ -151,13 +133,8 @@ function drawPredictionChart(id, data, color, minY, maxY) {
   predCharts[id] = new Chart(document.getElementById(id), {
     type: "line",
     data: {
-      labels: ["T+1", "T+2", "T+3", "T+4", "T+5"],
-      datasets: [{
-        data,
-        borderColor: color,
-        borderWidth: 3,
-        tension: 0.4
-      }]
+      labels: ["T+1","T+2","T+3","T+4","T+5"],
+      datasets: [{ data, borderColor: color, tension: 0.4 }]
     },
     options: chartOptions(minY, maxY)
   });
@@ -173,4 +150,25 @@ function chartOptions(minY, maxY) {
       y: { min: minY, max: maxY }
     }
   };
+}
+
+/* ================= HELPERS ================= */
+function smooth(data, w = 3) {
+  return data.map((_, i, arr) =>
+    arr.slice(Math.max(0, i - w + 1), i + 1)
+       .reduce((a, b) => a + b, 0) / Math.min(w, i + 1)
+  );
+}
+
+function multiStepTrend(values, min, max) {
+  const last = values.at(-1);
+  return Array.from({ length: 5 }, (_, i) =>
+    +(last + (Math.random() * (max - min) + min) * (i + 1)).toFixed(1)
+  );
+}
+
+function boundedAQITrend(base) {
+  return Array.from({ length: 5 }, (_, i) =>
+    Math.min(300, Math.max(0, Math.round(base + (Math.random()*8 - 4)*(i+1))))
+  );
 }
