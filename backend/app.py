@@ -124,6 +124,26 @@ def get_data():
             "history": [],
             "error": str(e)
         }
+@app.get("/cleaned-history")
+def get_cleaned_history():
+    df = pd.read_csv("CLEANED_DATA.csv")
+
+    # Ensure consistent naming
+    df = df.rename(columns={
+        "Avg Temperature": "temperature",
+        "Avg Humidity": "humidity",
+        "Avg AQI": "aqi",
+        "Timestamp": "timestamp"
+    })
+
+    # Convert to JSON-friendly format
+    records = df[["timestamp", "temperature", "humidity", "aqi"]].to_dict(orient="records")
+
+    return {
+        "source": "CLEANED_DATA.csv",
+        "count": len(records),
+        "history": records
+    }
 
 
 
@@ -186,6 +206,7 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
 
 
