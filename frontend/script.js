@@ -18,6 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ================= LOCATION ================= */
 function initMap(lat, lon) {
+  const mapEl = document.getElementById("map");
+  if (!mapEl || typeof L === "undefined") {
+    console.warn("Map container or Leaflet missing");
+    return;
+  }
+
   map = L.map("map").setView([lat, lon], 13);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -29,20 +35,29 @@ function initMap(lat, lon) {
 }
 
 function updateLocation() {
-  if (!navigator.geolocation) return;
+  if (!navigator.geolocation) {
+    initMap(19.1737, 77.3228);
+    return;
+  }
 
-  navigator.geolocation.getCurrentPosition(pos => {
-    const { latitude, longitude } = pos.coords;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude, longitude } = pos.coords;
 
-    document.getElementById("lat").textContent = latitude.toFixed(4);
-    document.getElementById("lon").textContent = consider longitude.toFixed(4);
+      document.getElementById("lat").textContent = latitude.toFixed(4);
+      document.getElementById("lon").textContent = longitude.toFixed(4);
 
-    if (!map) initMap(latitude, longitude);
-    else {
-      marker.setLatLng([latitude, longitude]);
-      map.setView([latitude, longitude]);
+      if (!map) initMap(latitude, longitude);
+      else {
+        marker.setLatLng([latitude, longitude]);
+        map.setView([latitude, longitude]);
+      }
+    },
+    () => {
+      console.warn("Geolocation denied, using fallback");
+      initMap(19.1737, 77.3228);
     }
-  });
+  );
 }
 
 /* ================= DATA FETCH ================= */
@@ -52,10 +67,14 @@ async function fetchAllData() {
     const res = await fetch(`${BACKEND_BASE}/data`);
     const data = await res.json();
 
-    console.log("📦 Backend response:", data);
+    console.log("✅ Backend response:", data);
 
-    // ✅ VALIDATION
-    if (!data || !data.history || !Array.isArray(data.history)) {
+    if (
+      typeof data.temperature !== "number" ||
+      typeof data.humidity !== "number" ||
+      typeof data.aqi !== "number" ||
+      !Array.isArray(data.history)
+    ) {
       throw new Error("Invalid backend response structure");
     }
 
@@ -68,10 +87,10 @@ async function fetchAllData() {
   }
 }
 
-/* ================= CURRENT UI ================= */
+/* ================= CURRENT ================= */
 function renderCurrent(data) {
-  document.getElementById("temp").textContent = data.temperature;
-  document.getElementById("hum").textContent = data.humidity;
+  document.getElementById("temp").textContent = `${data.temperature} °C`;
+  document.getElementById("hum").textContent = `${data.humidity} %`;
   document.getElementById("aqi").textContent = data.aqi;
 
   const badge = document.getElementById("aqiBadge");
@@ -93,7 +112,7 @@ function renderHistory(history) {
 }
 
 /* ================= PREDICTIONS ================= */
-async function runPrediction(history) {
+function runPrediction(history) {
   if (history.length < 5) return;
 
   drawPredictionChart("predTemp",
@@ -102,22 +121,24 @@ async function runPrediction(history) {
   );
 
   drawPredictionChart("predHum",
-    multiStepTrend(history.map(h => h.humidity), -0.8, 0. attachment),
+    multiStepTrend(history.map(h => h.humidity), -0.8, 0.8),
     "#42a5f5", 30, 90
   );
 
-  const lastAQI = history.at(-1).aqi;
   drawPredictionChart("predAqi",
-    boundedAQITrend(lastAQI),
+    boundedAQITrend(history.at(-1).aqi),
     "#ff6ec7", 0, 300
   );
 }
 
 /* ================= CHART HELPERS ================= */
 function drawLineChart(id, labels, data, color, minY, maxY) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+
   if (histCharts[id]) histCharts[id].destroy();
 
-  histCharts[id] = new Chart(document.getElementById(id), {
+  histCharts[id] = new Chart(canvas, {
     type: "line",
     data: {
       labels,
@@ -128,9 +149,12 @@ function drawLineChart(id, labels, data, color, minY, maxY) {
 }
 
 function drawPredictionChart(id, data, color, minY, maxY) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+
   if (predCharts[id]) predCharts[id].destroy();
 
-  predCharts[id] = new Chart(document.getElementById(id), {
+  predCharts[id] = new Chart(canvas, {
     type: "line",
     data: {
       labels: ["T+1","T+2","T+3","T+4","T+5"],
@@ -169,6 +193,6 @@ function multiStepTrend(values, min, max) {
 
 function boundedAQITrend(base) {
   return Array.from({ length: 5 }, (_, i) =>
-    Math.min(300, Math.max(0, Math.round(base + (Math.random()*8 - 4)*(i+1))))
+    Math.min(300, Math.max(0, Math.round(base + (Math.random() * 8 - 4) * (i + 1))))
   );
 }
