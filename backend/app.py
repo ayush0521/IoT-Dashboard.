@@ -88,44 +88,62 @@ def get_data():
         response.raise_for_status()
         raw = response.json()
 
-        # Handle dict OR list response
-        if isinstance(raw, dict):
-            raw = [raw]
+        # Handle list response
+        if isinstance(raw, list) and len(raw) > 0:
+            row = raw[-1]
 
-        cleaned = []
+        # Handle dict response
+        elif isinstance(raw, dict) and "data" in raw:
+            row = raw["data"]
 
-        for row in raw:
-            try:
-                temp = float(row.get("temperature") or 0)
-                hum = float(row.get("humidity") or 0)
-                aqi = float(row.get("aqi") or 0)
-
-                cleaned.append({
-                    "temperature": temp,
-                    "humidity": hum,
-                    "aqi": aqi
-                })
-            except Exception:
-                # Skip bad rows silently
-                continue
-
-        # Always return something predictable
-        if not cleaned:
+        else:
             return {
-                "temperature": 0,
-                "humidity": 0,
-                "aqi": 0
+                "ok": False,
+                "data": None,
+                "error": "Unexpected Google Sheets format"
             }
 
-        return cleaned[-1]  # latest row only
+        # SAFE parsing
+        def safe_float(val):
+            try:
+                return float(val)
+            except:
+                return None
+
+        payload = {
+            "temperature": safe_float(row.get("temperature")),
+            "humidity": safe_float(row.get("humidity")),
+            "aqi": safe_float(row.get("aqi")),
+            "category": row.get("category") or "Unknown"
+        }
+
+        # If any critical value missing
+        if payload["temperature"] is None or payload["aqi"] is None:
+            return {
+                "ok": False,
+                "data": None,
+                "error": "Incomplete sensor data"
+            }
+
+        return {
+            "ok": True,
+            "data": payload
+        }
+
+    except requests.exceptions.Timeout:
+        return {
+            "ok": False,
+            "data": None,
+            "error": "Google Sheets timeout"
+        }
 
     except Exception as e:
         return {
-            "temperature": 0,
-            "humidity": 0,
-            "aqi": 0,
+            "ok": False,
+            "data": None,
             "error": str(e)
         }
+
 
 @app.get("/history")
 def get_history():
@@ -186,6 +204,7 @@ def predict_aqi(data: AQIInput):
 @app.get("/debug/routes")
 def list_routes():
     return [route.path for route in app.routes]
+
 
 
 
