@@ -53,25 +53,30 @@ function updateLocation() {
 async function fetchAllData() {
   try {
     console.log("🔄 Fetching backend data...");
+
     const res = await fetch(`${BACKEND_BASE}/data`);
+    const data = await res.json();
 
-    if (!res.ok) throw new Error("Backend not reachable");
-
-    const payload = await res.json();
-
-    if (!payload.raw || !payload.raw.latest || !payload.raw.history) {
+    // ✅ STRICT validation
+    if (
+      !data ||
+      !data.raw ||
+      !data.raw.latest ||
+      !data.raw.history
+    ) {
       throw new Error("Invalid backend response structure");
     }
 
-    const { latest, history } = payload.raw;
-
-    renderCurrent(latest);
-    renderHistory(history);
-    runPrediction(history);
+    // ✅ FIXED paths
+    renderCurrent(data.raw.latest);
+    renderHistory(data.raw.history);
+    runPrediction(data.raw.history);
 
   } catch (err) {
     console.error("❌ Data fetch failed:", err.message);
   }
+}
+
 }
 
 /* ================= CURRENT UI ================= */
@@ -186,3 +191,4 @@ function boundedAQITrend(base) {
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
+
