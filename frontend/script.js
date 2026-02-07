@@ -4,13 +4,12 @@ const BACKEND_BASE = "https://iot-hyperlocal-weather-aqi-dashboard.onrender.com"
 /* ================= GLOBALS ================= */
 let map = null;
 let marker = null;
-
 let histCharts = {};
 let predCharts = {};
 
-/* ================= BOOT ================= */
 console.log("✅ script.js loaded");
 
+/* ================= BOOT ================= */
 document.addEventListener("DOMContentLoaded", () => {
   console.log("📄 DOM loaded");
   updateLocation();
@@ -32,51 +31,52 @@ function initMap(lat, lon) {
 function updateLocation() {
   if (!navigator.geolocation) return;
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude, longitude } = pos.coords;
 
-      document.getElementById("lat").textContent = lat.toFixed(4);
-      document.getElementById("lon").textContent = lon.toFixed(4);
+    document.getElementById("lat").textContent = latitude.toFixed(4);
+    document.getElementById("lon").textContent = longitude.toFixed(4);
 
-      if (!map) initMap(lat, lon);
-      else {
-        marker.setLatLng([lat, lon]);
-        map.setView([lat, lon]);
-      }
-    },
-    err => console.error("Geolocation error:", err.message)
-  );
+    if (!map) initMap(latitude, longitude);
+    else {
+      marker.setLatLng([latitude, longitude]);
+      map.setView([latitude, longitude]);
+    }
+  });
 }
 
 /* ================= DATA FETCH ================= */
 async function fetchAllData() {
   try {
-    console.log("🔄 Fetching live data...");
+    console.log("🔄 Fetching backend data...");
+
     const res = await fetch(`${BACKEND_BASE}/data`);
     const data = await res.json();
 
-    if (!data || !data.latest || !data.history) {
+    /* ---------- HARD VALIDATION ---------- */
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !data.latest ||
+      !data.history ||
+      !Array.isArray(data.history)
+    ) {
       throw new Error("Invalid backend response structure");
     }
+
+    console.log("✅ Backend data validated");
 
     renderCurrent(data.latest);
     renderHistory(data.history);
     runPrediction(data.history);
 
   } catch (err) {
-    console.error("❌ Data fetch failed:", err);
+    console.error("❌ Data fetch failed:", err.message);
   }
 }
 
 /* ================= CURRENT UI ================= */
 function renderCurrent(latest) {
-  if (!latest) {
-    console.error("❌ Missing latest data");
-    return;
-  }
-
   document.getElementById("temp").textContent = `${latest.temperature} °C`;
   document.getElementById("hum").textContent = `${latest.humidity} %`;
   document.getElementById("aqi").textContent = latest.aqi;
@@ -92,41 +92,22 @@ function renderCurrent(latest) {
 
 /* ================= HISTORY ================= */
 function renderHistory(history) {
-  if (!Array.isArray(history) || history.length === 0) return;
-
   const labels = history.map(h => h.timestamp);
 
-  drawLineChart("histTemp", labels, smooth(history.map(h => h.temperature)), "#ff7043", 20, 40);
-  drawLineChart("histHum", labels, smooth(history.map(h => h.humidity)), "#42a5f5", 30, 90);
-  drawLineChart("histAqi", labels, smooth(history.map(h => h.aqi)), "#ab47bc", 0, 300);
+  drawLineChart("histTemp", labels, history.map(h => h.temperature), "#ff7043", 20, 40);
+  drawLineChart("histHum", labels, history.map(h => h.humidity), "#42a5f5", 30, 90);
+  drawLineChart("histAqi", labels, history.map(h => h.aqi), "#ab47bc", 0, 300);
 }
 
 /* ================= PREDICTIONS ================= */
 async function runPrediction(history) {
-  if (!Array.isArray(history) || history.length < 5) return;
+  if (history.length < 5) return;
 
-  /* ---------- Temperature ---------- */
-  drawPredictionChart(
-    "predTemp",
-    multiStepTrend(history.map(h => h.temperature), -0.3, 0.3),
-    "#ff7043",
-    20,
-    40
-  );
+  drawPredictionChart("predTemp", trend(history.map(h => h.temperature)), "#ff7043", 20, 40);
+  drawPredictionChart("predHum", trend(history.map(h => h.humidity)), "#42a5f5", 30, 90);
 
-  /* ---------- Humidity ---------- */
-  drawPredictionChart(
-    "predHum",
-    multiStepTrend(history.map(h => h.humidity), -0.8, 0.8),
-    "#42a5f5",
-    30,
-    90
-  );
-
-  /* ---------- AQI (ML) ---------- */
   const last5 = history.slice(-5);
   const values = last5.map(d => [d.temperature, d.humidity, d.aqi]);
-  const lastObservedAQI = history.at(-1).aqi;
 
   try {
     const res = await fetch(`${BACKEND_BASE}/predict`, {
@@ -135,19 +116,10 @@ async function runPrediction(history) {
       body: JSON.stringify({ values })
     });
 
-    const result = await res.json();
-    console.log("🔍 Raw ML AQI output:", result.predicted_aqi);
+    const out = await res.json();
+    const baseAQI = clamp(out.predicted_aqi, 0, 300);
 
-    let mlDelta = clamp(result.predicted_aqi ?? 0, -20, 20);
-    const baseAQI = clamp(lastObservedAQI + mlDelta, 10, 300);
-
-    drawPredictionChart(
-      "predAqi",
-      boundedAQITrend(baseAQI),
-      "#ff6ec7",
-      0,
-      300
-    );
+    drawPredictionChart("predAqi", trend([baseAQI]), "#ff6ec7", 0, 300);
 
   } catch (err) {
     console.error("❌ AQI prediction failed:", err);
@@ -162,14 +134,7 @@ function drawLineChart(id, labels, data, color, minY, maxY) {
     type: "line",
     data: {
       labels,
-      datasets: [{
-        data,
-        borderColor: color,
-        borderWidth: 3,
-        tension: 0.35,
-        pointRadius: 2,
-        pointHoverRadius: 5
-      }]
+      datasets: [{ data, borderColor: color, borderWidth: 3 }]
     },
     options: chartOptions(minY, maxY)
   });
@@ -182,15 +147,7 @@ function drawPredictionChart(id, data, color, minY, maxY) {
     type: "line",
     data: {
       labels: ["T+1", "T+2", "T+3", "T+4", "T+5"],
-      datasets: [{
-        data,
-        borderColor: color,
-        backgroundColor: `${color}22`,
-        borderWidth: 3,
-        tension: 0.4,
-        pointRadius: 5,
-        pointHoverRadius: 7
-      }]
+      datasets: [{ data, borderColor: color, borderWidth: 3 }]
     },
     options: chartOptions(minY, maxY)
   });
@@ -200,40 +157,19 @@ function chartOptions(minY, maxY) {
   return {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false }
-    },
-    scales: {
-      x: { display: false },
-      y: { display: true, min: minY, max: maxY }
-    }
+    plugins: { legend: { display: false } },
+    scales: { y: { min: minY, max: maxY } }
   };
 }
 
-/* ================= MATH HELPERS ================= */
-function smooth(data, window = 3) {
-  return data.map((_, i, arr) => {
-    const start = Math.max(0, i - window + 1);
-    const slice = arr.slice(start, i + 1);
-    return slice.reduce((a, b) => a + b, 0) / slice.length;
-  });
-}
-
-function multiStepTrend(values, minDelta, maxDelta) {
+/* ================= HELPERS ================= */
+function trend(values) {
   const last = values.at(-1);
-  return Array.from({ length: 5 }, (_, i) => {
-    const noise = Math.random() * (maxDelta - minDelta) + minDelta;
-    return Math.round((last + noise * (i + 1)) * 10) / 10;
-  });
+  return Array.from({ length: 5 }, (_, i) =>
+    Math.round((last + Math.random() * 4 - 2) * 10) / 10
+  );
 }
 
-function boundedAQITrend(base) {
-  return Array.from({ length: 5 }, (_, i) => {
-    const variation = (Math.random() * 8 - 4) * (i + 1);
-    return clamp(Math.round(base + variation), 0, 300);
-  });
-}
-
-function clamp(val, min, max) {
-  return Math.min(Math.max(val, min), max);
+function clamp(v, min, max) {
+  return Math.min(Math.max(v, min), max);
 }
