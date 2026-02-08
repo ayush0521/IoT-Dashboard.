@@ -115,9 +115,9 @@ Prediction logic uses a combination of:
 <ul>
   <li>Trend-based forecasting for temperature & humidity</li>
   <li>LSTM-based ML model for AQI prediction</li>
-<p><i>Note</i>: The AQI LSTM model is trained on locally collected historical sensor data and is intended for short-horizon trend estimation, not regulatory-grade AQI forecasting.</p>
   <li>Bounded projections to maintain realistic values</li>
 </ul>
+<p><i>Note</i>: The AQI LSTM model is trained on locally collected historical sensor data and is intended for short-horizon trend estimation, not regulatory-grade AQI forecasting.</p>
 
 <hr/>
 
