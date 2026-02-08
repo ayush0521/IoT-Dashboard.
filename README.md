@@ -78,6 +78,36 @@ the cloud, processed by a backend ML service, and visualized using a modern web 
   <li>Stable layout with fixed-height graphs</li>
 </ul>
 
+<hr/>
+
+<h2>📊 Dashboard Preview</h2>
+
+<p>
+The dashboard provides a unified view of real-time sensor readings,
+historical trends, and machine-learning-based AQI prediction through
+interactive charts and maps.
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/dashboard_home.png"
+       alt="IoT Hyperlocal Weather & AQI Dashboard"
+       width="90%"/>
+</p>
+
+<h2>🧠 Dataset Used for ML Model Training</h2>
+
+<p>
+The following dataset represents the <b>cleaned and aggregated historical sensor data</b>
+used to train the AQI prediction model. Data includes timestamped averages of
+temperature, humidity, and AQI values with derived AQI categories.
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/ml_dataset_sheet.png"
+       alt="ML Training Dataset"
+       width="90%"/>
+</p>
+
 <p>
 Prediction logic uses a combination of:
 </p>
@@ -85,7 +115,7 @@ Prediction logic uses a combination of:
 <ul>
   <li>Trend-based forecasting for temperature & humidity</li>
   <li>LSTM-based ML model for AQI prediction</li>
-    <i>Note</i>: The AQI LSTM model is trained on locally collected historical sensor data and is intended for short-horizon trend estimation, not regulatory-grade AQI forecasting.
+<p><i>Note</i>: The AQI LSTM model is trained on locally collected historical sensor data and is intended for short-horizon trend estimation, not regulatory-grade AQI forecasting.</p>
   <li>Bounded projections to maintain realistic values</li>
 </ul>
 
@@ -199,22 +229,28 @@ iot-hyperlocal-weather-aqi-dashboard/
 
 <hr/>
 
-<h2>👨‍💻 Author</h2>
+<h2>👨‍💻 Authors</h2>
 
 <p>
-<b>Ayush Padmawar</b><br/>
-Electronics & Telecommunication Engineering<br/>
-Focused on building practical systems across <b>IoT</b>, <b>full-stack development</b>, and <b>applied AI</b>
+<b>Ayush Padmawar</b> <br/>
+Software, ML & Deployment<br/>
+<a href="https://www.linkedin.com/in/ayush-padmawar21" target="_blank">
+LinkedIn
+</a>
 </p>
 
+<br/>
+
 <p>
-🔗 LinkedIn:
-<a href="https://www.linkedin.com/in/ayush-padmawar21" target="_blank">
-ayush-padmawar21
+<b>Gandharv Birkurwar</b> <br/>
+Hardware & Embedded Systems<br/>
+<a href="https://www.linkedin.com/in/gandharv-birkurwar-3407a12b9/" target="_blank">
+LinkedIn
 </a>
 </p>
 
 <hr/>
+
 
 <p align="center">
 <i>Designed, implemented, and deployed as a real-world system — not just a prototype.</i>
